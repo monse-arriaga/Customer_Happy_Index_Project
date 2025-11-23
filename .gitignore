@@ -1,0 +1,28 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Entornos virtuales ---
+nlp_env/
+env/
+.nvenv/
+*.venv/
+
+# --- Archivos de configuración / dependencias ---
+*.log
+*.sqlite3
+
+# --- Archivos de herramientas ---
+.ipynb_checkpoints/
+.cache/
+
+# --- Sistemas operativos ---
+.DS_Store
+Thumbs.db
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp

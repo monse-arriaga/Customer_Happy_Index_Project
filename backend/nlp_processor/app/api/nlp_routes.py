@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 import csv
-from ..nlp.sentiment import analyze_sentiment
-from ..nlp.topics import extract_topics
+from ..nlp.sentiment3 import analyze_sentiment
+from ..nlp.Emociones4 import extract_topics
 from ..core.preprocessing import clean_text
 
 router = APIRouter()

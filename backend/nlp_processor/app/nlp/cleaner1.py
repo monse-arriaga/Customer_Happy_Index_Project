@@ -9,25 +9,19 @@ from gensim.models.phrases import Phrases, Phraser
 # ============================
 df = pd.read_csv(r"D:\Customer_Happy_Index_Project\backend\nlp_processor\app\nlp\Data\tweets_format.csv")
 
-
 # ============================
 # MODELOS POR IDIOMA
 # ============================
 nlp_es = spacy.load("es_core_news_sm")
 nlp_de = spacy.load("de_core_news_sm")
 
-
 # ============================
 # STOPWORDS
 # ============================
 FRASES_A_ELIMINAR = ["rt", "via"]
 
-STOP_ES = set(nlp_es.Defaults.stop_words)
-STOP_DE = set(nlp_de.Defaults.stop_words)
-
-STOP_ES = STOP_ES.union([x.lower() for x in FRASES_A_ELIMINAR])
-STOP_DE = STOP_DE.union([x.lower() for x in FRASES_A_ELIMINAR])
-
+STOP_ES = set(nlp_es.Defaults.stop_words).union([x.lower() for x in FRASES_A_ELIMINAR])
+STOP_DE = set(nlp_de.Defaults.stop_words).union([x.lower() for x in FRASES_A_ELIMINAR])
 
 # ============================
 # ALIAS
@@ -35,7 +29,6 @@ STOP_DE = STOP_DE.union([x.lower() for x in FRASES_A_ELIMINAR])
 ALIAS = {
     "cdmx": "ciudad_de_mexico",
 }
-
 
 # ============================
 # 1) Limpieza básica
@@ -51,7 +44,7 @@ def limpiar_bruto(t):
     # URLs
     t = re.sub(r'https?://\S+|www\.\S+', '', t)
 
-    # menciones/hashtags (para limpieza, antes de extracción)
+    # menciones/hashtags
     t = re.sub(r'[@#]\w+', '', t)
 
     # líneas de solo números
@@ -65,10 +58,8 @@ def limpiar_bruto(t):
 
     return t
 
-
 df["Tweet_limpio"] = df["Tweet"].apply(limpiar_bruto)
 df = df.drop(columns=["Tweet"])
-
 
 # ============================
 # 2) Menciones y hashtags
@@ -86,7 +77,6 @@ def extraer_menciones_hashtags(texto):
 
     return menciones_counter, hashtags_counter
 
-
 # ============================
 # 3) Alias
 # ============================
@@ -95,12 +85,10 @@ def unificar_alias(texto):
         texto = re.sub(rf"\b{alias}\b", nombre, texto)
     return texto
 
-
 df["Tweet_limpio"] = df["Tweet_limpio"].apply(unificar_alias)
 
-
 # ============================
-# 4) spaCy: stopwords, entidades, lematizar
+# 4) spaCy: stopwords, entidades, lematizar + infinitivo para verbos
 # ============================
 def procesar_spacy(texto, lang):
 
@@ -115,7 +103,7 @@ def procesar_spacy(texto, lang):
 
     doc = nlp(texto)
 
-    # unir entidades
+    # unir entidades de varias palabras con _
     texto_mod = texto
     for ent in doc.ents:
         if len(ent.text.split()) > 1:
@@ -134,37 +122,37 @@ def procesar_spacy(texto, lang):
             continue
 
         lemma = token.lemma_.lower().strip()
+        if lemma in STOP:
+            continue
 
-        if lemma not in STOP:
+        # VERBOS en infinitivo
+        if token.pos_ == "VERB":
+            tokens_limpios.append(lemma)  # spaCy devuelve el infinitivo
+        else:
             tokens_limpios.append(lemma)
 
     return " ".join(tokens_limpios)
 
-
 df["Procesado"] = df.apply(lambda x: procesar_spacy(x["Tweet_limpio"], x["Lang"]), axis=1)
-
 
 # ============================
 # 5) BIGRAMAS → reemplazar Tweet_limpio
 # ============================
 def detectar_bigramas(df, columna="Procesado", min_count=5, threshold=10):
     textos = [t.split() for t in df[columna] if isinstance(t, str)]
-
     phrases = Phrases(textos, min_count=min_count, threshold=threshold)
     bigram_mod = Phraser(phrases)
 
     nuevos = [" ".join(bigram_mod[t]) for t in textos]
-
-    df["Tweet_limpio"] = nuevos   # <<<<<< AQUI REEMPLAZA
+    df["Tweet_limpio"] = nuevos   
     return df
 
-
 df = detectar_bigramas(df)
-
 
 # ============================
 # Guardar salida final
 # ============================
-df.to_csv("tweets_limpios_completos.csv", index=False)
 
-print("✓ Limpieza completa aplicada (ES + DE) con bigramas en Tweet_limpio.")
+df.to_csv("tweets_limpios_completos.csv", index=False, encoding='utf-8-sig')
+
+print("✓ Limpieza completa aplicada (ES + DE) con infinitivos y bigramas en Tweet_limpio.")
