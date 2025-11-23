@@ -67,7 +67,6 @@ df["Tweet_limpio"] = df["Tweet_Limpio_Bruto"]
 # Eliminar columna original si quieres
 df = df.drop(columns=["Tweet"])
 
-
 # ============================
 # 2) Menciones y hashtags
 # ============================
@@ -157,6 +156,12 @@ def detectar_bigramas(df, columna="Procesado", min_count=5, threshold=10):
 df = detectar_bigramas(df)
 
 # ============================
+# Limpiar "and" al inicio o final
+# ============================
+df["Tweet_limpio"] = df["Tweet_limpio"].str.strip()
+df["Tweet_limpio"] = df["Tweet_limpio"].str.replace(r'^(and\s+)|(\s+and)$', '', regex=True)
+
+# ============================
 # Guardar salida final
 # ============================
 # ============================
@@ -167,5 +172,3 @@ df["Fuente"] = ["C" if i < 5000 else "T" for i in range(len(df))]
 df.to_csv("tweets_limpios_completos.csv", index=False, encoding='utf-8-sig')
 
 print("✓ Limpieza completa aplicada (ES + DE) con infinitivos y bigramas en Tweet_limpio. Fuente marcada.")
-
-
