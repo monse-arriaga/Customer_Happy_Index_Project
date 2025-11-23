@@ -1,10 +1,10 @@
 # ====================================================
-# BERTopic sobre embeddings pre-calculados con tweet representativo
+# BERTopic sobre embeddings pre-calculados con tweet representativo y traducciones
 # ====================================================
 import numpy as np
 import pandas as pd
 from bertopic import BERTopic
-from googletrans import Translator  # para traducción
+from googletrans import Translator
 
 # -------------------------------
 # Configuración
@@ -35,7 +35,7 @@ topic_model = BERTopic(
     language="multilingual",
     calculate_probabilities=True,
     verbose=True,
-    min_topic_size=12
+    min_topic_size=20
 )
 
 # -------------------------------
@@ -65,8 +65,13 @@ for i, topic_id in enumerate(real_topics.Topic[:NUM_KEYWORDS]):
     keywords = topic_model.get_topic(topic_id)
     words = [k[0] for k in keywords]
     
-    # Traducir palabras al inglés
-    translations = [translator.translate(word, src='auto', dest='en').text for word in words]
+    translations = []
+    for word in words:
+        try:
+            t = translator.translate(word, src='auto', dest='en').text
+        except Exception:
+            t = word  # Si falla, dejar la palabra original
+        translations.append(t)
     
     topic_translations[topic_id] = translations
     
@@ -89,15 +94,17 @@ representative_tweets_en = {}
 for topic_id in real_topics.Topic:
     rep_docs = topic_model.get_representative_docs(topic_id)
     if rep_docs:
-        # Buscar el primer tweet representativo que exista en la columna Tweet_Limpio_Bruto
-        # Esto asegura que usamos el tweet “bien escrito”
+        # Buscar el primer tweet representativo que exista en Tweet_Limpio_Bruto
         for doc in rep_docs:
             mask = df["Tweet_limpio"] == doc
             if mask.any():
                 tweet_bruto = df.loc[mask, "Tweet_Limpio_Bruto"].iloc[0]
                 representative_tweets[topic_id] = tweet_bruto
-                # Traducir al inglés
-                representative_tweets_en[topic_id] = translator.translate(tweet_bruto, src='auto', dest='en').text
+                # Traducir al inglés SOLO este tweet representativo con try/except
+                try:
+                    representative_tweets_en[topic_id] = translator.translate(tweet_bruto, src='auto', dest='en').text
+                except Exception:
+                    representative_tweets_en[topic_id] = tweet_bruto
                 break
 
 df["BERTopic_Representative_Tweet"] = df["BERTopic_Topic"].map(representative_tweets)
