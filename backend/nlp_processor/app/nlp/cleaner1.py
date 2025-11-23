@@ -58,8 +58,15 @@ def limpiar_bruto(t):
 
     return t
 
-df["Tweet_limpio"] = df["Tweet"].apply(limpiar_bruto)
+# Aplicar limpieza básica y guardar en columna separada
+df["Tweet_Limpio_Bruto"] = df["Tweet"].apply(limpiar_bruto)
+
+# Ahora sí, reemplazar "Tweet" por la columna que seguiremos procesando
+df["Tweet_limpio"] = df["Tweet_Limpio_Bruto"]
+
+# Eliminar columna original si quieres
 df = df.drop(columns=["Tweet"])
+
 
 # ============================
 # 2) Menciones y hashtags
@@ -152,7 +159,13 @@ df = detectar_bigramas(df)
 # ============================
 # Guardar salida final
 # ============================
+# ============================
+# Marcar fuente
+# ============================
+df["Fuente"] = ["C" if i < 5000 else "T" for i in range(len(df))]
 
 df.to_csv("tweets_limpios_completos.csv", index=False, encoding='utf-8-sig')
 
-print("✓ Limpieza completa aplicada (ES + DE) con infinitivos y bigramas en Tweet_limpio.")
+print("✓ Limpieza completa aplicada (ES + DE) con infinitivos y bigramas en Tweet_limpio. Fuente marcada.")
+
+
