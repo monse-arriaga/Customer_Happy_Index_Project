@@ -1,1 +1,0 @@
-// Heatmaps API client
