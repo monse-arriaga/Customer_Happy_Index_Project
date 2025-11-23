@@ -19,15 +19,15 @@ export default function BubbleChartTopics() {
       dynamicTyping: true,
       complete: (results) => {
         const rows = results.data;
-        
+
         // Agrupar por tema
         const topicsMap = {};
-        
+
         rows.forEach(row => {
           const topic = row.BERTopic_Topic !== undefined ? row.BERTopic_Topic : 'Sin tema';
           const lang = row.Lang ? row.Lang.trim().toUpperCase() : '';
           const sentiment = parseFloat(row.SentimentScore);
-          
+
           if (!topicsMap[topic]) {
             topicsMap[topic] = {
               topic: topic,
@@ -38,18 +38,18 @@ export default function BubbleChartTopics() {
               sentimentCount: 0
             };
           }
-          
+
           topicsMap[topic].total++;
-          
+
           if (lang === 'A') topicsMap[topic].langA++;
           if (lang === 'E') topicsMap[topic].langE++;
-          
+
           if (!isNaN(sentiment)) {
             topicsMap[topic].sentimentSum += sentiment;
             topicsMap[topic].sentimentCount++;
           }
         });
-        
+
         // Convertir a array y calcular promedios
         const processedData = Object.values(topicsMap).map((item, index) => ({
           topic: `Tema ${item.topic}`,
@@ -58,12 +58,12 @@ export default function BubbleChartTopics() {
           total: item.total,
           langA: item.langA,
           langE: item.langE,
-          avgSentiment: item.sentimentCount > 0 
-            ? item.sentimentSum / item.sentimentCount 
+          avgSentiment: item.sentimentCount > 0
+            ? item.sentimentSum / item.sentimentCount
             : 0,
           propA: item.total > 0 ? (item.langA / item.total) * 100 : 0
         })).sort((a, b) => a.avgSentiment - b.avgSentiment);
-        
+
         setData(processedData);
         setStats({
           totalTopics: processedData.length,
@@ -82,14 +82,14 @@ export default function BubbleChartTopics() {
   const loadCSVFromGitHub = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(CSV_URL);
-      
+
       if (!response.ok) {
         throw new Error(`Error ${response.status}: No se pudo cargar el archivo`);
       }
-      
+
       const csvText = await response.text();
       processCSV(csvText);
     } catch (err) {
@@ -209,17 +209,17 @@ export default function BubbleChartTopics() {
           <ResponsiveContainer width="100%" height={500}>
             <ScatterChart margin={{ top: 20, right: 30, bottom: 60, left: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                type="number" 
-                dataKey="avgSentiment" 
-                name="Sentiment" 
+              <XAxis
+                type="number"
+                dataKey="avgSentiment"
+                name="Sentiment"
                 domain={[-1, 1]}
                 label={{ value: 'Sentiment Score Promedio', position: 'bottom', offset: 40 }}
                 stroke="#6b7280"
               />
-              <YAxis 
-                type="number" 
-                dataKey="yPosition" 
+              <YAxis
+                type="number"
+                dataKey="yPosition"
                 name="Tema"
                 domain={[0, 'dataMax + 1']}
                 tick={false}
@@ -227,8 +227,8 @@ export default function BubbleChartTopics() {
                 stroke="#6b7280"
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend 
-                verticalAlign="top" 
+              <Legend
+                verticalAlign="top"
                 height={36}
                 content={() => (
                   <div className="flex justify-center gap-6 mb-4">
@@ -249,8 +249,8 @@ export default function BubbleChartTopics() {
               />
               <Scatter data={data} fill="#8884d8">
                 {data.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
+                  <Cell
+                    key={`cell-${index}`}
                     fill={getColor(entry.propA)}
                     fillOpacity={0.7}
                   />
